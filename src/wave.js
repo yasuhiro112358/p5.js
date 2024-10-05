@@ -3,6 +3,7 @@ import p5 from 'p5';
 
 // グローバル変数の設定
 let waves = [];
+let influencePoints = [];
 let centerX, centerY;
 
 // p5.jsスケッチ
@@ -16,72 +17,69 @@ const sketch = (p) => {
 
   p.draw = () => {
     p.colorMode(p.HSB, 360, 100, 100, 255); // カラーモードをHSBに設定
-    // p.background(210, 100, 40);
-    // p.background(180, 70, 80);
-    p.background(230, 60, 70);
-    
-    // 緩やかな振動を背景に追加
+    p.background(230, 70, 60);
 
-    for (let x = 0; x <= p.width; x += 16) { // 20pxごとに点を打つ
-      for (let y = 0; y <= p.height; y += 16) { // 20pxごとに点を打つ
-        let noiseVal = p.noise(x * 0.005, y * 0.005, p.frameCount * 0.010); // ノイズの値を取得 (0~1)
-        
-        // p.fill(210, 50, 80, noiseVal * 255); // 塗りつぶしの色を設定 (HSB, 透明度)
-        // p.fill(160, 60, 90, noiseVal * 255); // 塗りつぶしの色を設定 (HSB, 透明度)
-        p.fill(200, 60, 100, noiseVal * 255); // 塗りつぶしの色を設定 (HSB, 透明度)
-        p.noStroke(); // 線を描かない
-        p.ellipse(x, y, 8 + noiseVal * 12); // 点を描く (x, y, 直径)
+    // 緩やかな振動を背景に追加
+    for (let x = 0; x <= p.width; x += 16) {
+      for (let y = 0; y <= p.height; y += 16) {
+        // let noiseVal = p.noise(x * 0.005, y * 0.005, p.frameCount * 0.01); // 基本のノイズ値
+        let noiseVal = p.noise(x * 0.010, y * 0.010, p.frameCount * 0.01); // 基本のノイズ値
+
+        // すべての影響ポイントの効果を適用
+        influencePoints.forEach(point => {
+          let distance = p.dist(x, y, point.x, point.y);
+          if (distance < point.radius) {
+            noiseVal += point.strength * Math.exp(-distance / 50); // 距離に応じてノイズ値を変化
+            if (noiseVal > 1.0) {
+              noiseVal = 1.0; // ノイズ値が1.0を超えないようにする
+            }
+          }
+        });
+
+        // p.fill(200, 60, 100, noiseVal * 255); // ノイズ値に応じて透明度を変化
+        p.fill(210, 60, 80, noiseVal * 255); // ノイズ値に応じて透明度を変化
+        p.noStroke();
+        p.ellipse(x, y, 8 + noiseVal * 8);
       }
     }
 
-    // マウスの位置を中心に求心点を設定
-    centerX = p.mouseX;
-    centerY = p.mouseY;
-
-    // 波紋の描画
-    for (let i = waves.length - 1; i >= 0; i--) {
-      let wave = waves[i];
-      wave.display();
-      wave.update();
-
-      // 波紋が消えたらリストから削除
-      if (wave.isDone()) {
-        waves.splice(i, 1);
+    // 影響ポイントの伝搬処理
+    for (let i = influencePoints.length - 1; i >= 0; i--) {
+      influencePoints[i].update();
+      if (influencePoints[i].isDone()) {
+        influencePoints.splice(i, 1); // 影響ポイントが消えたら削除
       }
     }
   };
 
-  // クリックした時に波紋を追加
+  // クリックした時に影響ポイントを追加
   p.mousePressed = () => {
-    waves.push(new Wave(p, centerX, centerY));
+    influencePoints.push(new InfluencePoint(p, p.mouseX, p.mouseY));
   };
 };
 
-// 波紋のクラス
-class Wave {
+// 影響ポイントのクラス
+class InfluencePoint {
   constructor(p, x, y) {
     this.p = p;
     this.x = x;
     this.y = y;
-    this.radius = 0;
-    this.alpha = 255;
+    this.radius = 0; // 初期の影響範囲
+    // this.strength = 0.5; // ノイズに与える影響の強さ
+    this.strength = 0.3; // ノイズに与える影響の強さ
+    // this.lifespan = 200; // 存在時間
+    this.lifespan = 300; // 存在時間
   }
 
   update() {
-    this.radius += 2; // 波の広がり速度
-    // this.alpha -= 4;  // 波の消えていく速度
-    this.alpha -= 1;  // 波の消えていく速度
-  }
-
-  display() {
-    this.p.noFill();
-    this.p.stroke(255, this.alpha);
-    this.p.strokeWeight(2);
-    this.p.ellipse(this.x, this.y, this.radius * 2);
+    // this.radius += 4; // 影響範囲を徐々に拡大
+    this.radius += 3; // 影響範囲を徐々に拡大
+    // this.radius += 2; // 影響範囲を徐々に拡大
+    this.lifespan -= 1; // 影響ポイントの寿命を減らす
   }
 
   isDone() {
-    return this.alpha <= 0;
+    return this.lifespan <= 0; // 寿命が尽きたら削除
   }
 }
 
