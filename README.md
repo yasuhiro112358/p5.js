@@ -29,3 +29,7 @@ export default defineConfig({
 });
 ```
 
+```bash
+npm install tweakpane
+```
+
