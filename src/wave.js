@@ -1,10 +1,21 @@
 // インストール済みのp5.jsをインポート
-import p5 from 'p5';
+import p5 from 'p5'; // p5.jsをインポート
+import { Pane } from 'tweakpane'; // Tweakpaneをインポート
 
 // グローバル変数の設定
 let waves = [];
 let influencePoints = [];
 let centerX, centerY;
+
+// Tweakpaneのパラメータ
+const params = {
+  bgHue: 230,
+  bgSaturation: 70,
+  bgBrightness: 60,
+  waveHue: 210,
+  waveSaturation: 60,
+  waveBrightness: 80,
+};
 
 // p5.jsスケッチ
 const sketch = (p) => {
@@ -13,11 +24,31 @@ const sketch = (p) => {
     p.createCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight).parent(canvasContainer);
     centerX = p.width / 2;
     centerY = p.height / 2;
+
+    // Tweakpaneの設定
+    const pane = new Pane({ // Tweakpaneのインスタンスを作成
+      container: document.getElementById('tweakpane-container'), // Tweakpaneを表示する要素を指定
+    });
+    const bgFolder = pane.addFolder({ // フォルダを追加
+      title: 'Background',
+      expanded: true,
+    });
+    const waveFolder = pane.addFolder({ // フォルダを追加
+      title: 'Wave',
+      expanded: true,
+    });
+    
+    bgFolder.addBinding(params, 'bgHue', { min: 0, max: 360 });
+    bgFolder.addBinding(params, 'bgSaturation', { min: 0, max: 100 });
+    bgFolder.addBinding(params, 'bgBrightness', { min: 0, max: 100 });
+    waveFolder.addBinding(params, 'waveHue', { min: 0, max: 360 });
+    waveFolder.addBinding(params, 'waveSaturation', { min: 0, max: 100 });
+    waveFolder.addBinding(params, 'waveBrightness', { min: 0, max: 100 });
   };
 
   p.draw = () => {
     p.colorMode(p.HSB, 360, 100, 100, 255); // カラーモードをHSBに設定
-    p.background(230, 70, 60);
+    p.background(params.bgHue, params.bgSaturation, params.bgBrightness); // 背景色を設定
 
     // 緩やかな振動を背景に追加
     for (let x = 0; x <= p.width; x += 16) {
@@ -37,7 +68,7 @@ const sketch = (p) => {
         });
 
         // p.fill(200, 60, 100, noiseVal * 255); // ノイズ値に応じて透明度を変化
-        p.fill(210, 60, 80, noiseVal * 255); // ノイズ値に応じて透明度を変化
+        p.fill(params.waveHue, params.waveSaturation, params.waveBrightness, noiseVal * 255); // ノイズ値に応じて透明度を変化
         p.noStroke();
         p.ellipse(x, y, 8 + noiseVal * 8);
       }
